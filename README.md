@@ -1,3 +1,5 @@
-# Playwright TypeScript Framework
+# 🎡 Playwright TypeScript Framework
 
-Initialising...
+Enterprise-grade UI and API test framework built on Playwright + TypeScript.
+
+See README in repo.
