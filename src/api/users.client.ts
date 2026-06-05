@@ -1,1 +1,30 @@
-import{APIRequestContext,APIResponse}from"@playwright/test";import{APIClient}from"./base.client";export class UsersClient extends APIClient{constructor(r:APIRequestContext){super(r);}async getAll():Promise<APIResponse>{return this.get("/users");}async getById(id:number):Promise<APIResponse>{return this.get(`/users/${id}`);}async getPosts(userId:number):Promise<APIResponse>{return this.get(`/users/${userId}/posts`);}async getTodos(userId:number):Promise<APIResponse>{return this.get(`/users/${userId}/todos`);}async getAlbums(userId:number):Promise<APIResponse>{return this.get(`/users/${userId}/albums`);}}
+// src/api/users.client.ts — Users endpoint client
+
+import { APIRequestContext, APIResponse } from "@playwright/test";
+import { APIClient } from "./base.client";
+
+export class UsersClient extends APIClient {
+  constructor(request: APIRequestContext) {
+    super(request);
+  }
+
+  async getAll(): Promise<APIResponse> {
+    return this.get("/users");
+  }
+
+  async getById(id: number): Promise<APIResponse> {
+    return this.get(`/users/${id}`);
+  }
+
+  async getPosts(userId: number): Promise<APIResponse> {
+    return this.get(`/users/${userId}/posts`);
+  }
+
+  async getTodos(userId: number): Promise<APIResponse> {
+    return this.get(`/users/${userId}/todos`);
+  }
+
+  async getAlbums(userId: number): Promise<APIResponse> {
+    return this.get(`/users/${userId}/albums`);
+  }
+}
