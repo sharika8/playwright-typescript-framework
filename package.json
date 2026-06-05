@@ -3,24 +3,21 @@
   "version": "1.0.0",
   "description": "Enterprise Playwright + TypeScript UI & API test framework",
   "scripts": {
-    "test": "playwright test",
-    "test:ui": "playwright test tests/ui",
-    "test:api": "playwright test tests/api",
-    "test:integration": "playwright test tests/integration",
-    "test:smoke": "playwright test --grep @smoke",
-    "test:regression": "playwright test --grep @regression",
-    "test:headed": "playwright test --headed",
-    "test:debug": "playwright test --debug",
-    "report": "playwright show-report",
-    "lint": "eslint src tests --ext .ts",
-    "type-check": "tsc --noEmit"
+    "test": "npx playwright test",
+    "test:ui": "npx playwright test tests/ui",
+    "test:api": "npx playwright test tests/api",
+    "test:integration": "npx playwright test tests/integration",
+    "test:smoke": "npx playwright test --grep @smoke",
+    "test:regression": "npx playwright test --grep @regression",
+    "test:headed": "npx playwright test --headed",
+    "test:debug": "npx playwright test --debug",
+    "report": "npx playwright show-report",
+    "lint": "npx tsc --noEmit",
+    "type-check": "npx tsc --noEmit"
   },
   "devDependencies": {
-    "@playwright/test": "^1.49.1",
-    "@types/node": "^22.0.0",
-    "typescript": "^5.7.2",
-    "eslint": "^8.57.0",
-    "@typescript-eslint/parser": "^7.18.0",
-    "@typescript-eslint/eslint-plugin": "^7.18.0"
+    "@playwright/test": "1.49.1",
+    "@types/node": "22.15.29",
+    "typescript": "5.7.3"
   }
 }

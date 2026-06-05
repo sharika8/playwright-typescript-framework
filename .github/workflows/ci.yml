@@ -13,12 +13,6 @@ on:
         default: development
         type: choice
         options: [development, staging, production]
-      suite:
-        description: Test suite
-        required: true
-        default: all
-        type: choice
-        options: [all, smoke, regression, ui, api, integration]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -33,9 +27,10 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
-      - run: npm install
-      - run: npm run type-check
-      - run: npm run lint || true
+      - name: Install dependencies
+        run: npm install
+      - name: Type check
+        run: npm run type-check
 
   api-tests:
     name: API Tests
@@ -51,7 +46,7 @@ jobs:
       - name: Run API tests
         env:
           ENV: ${{ github.event.inputs.environment || 'development' }}
-        run: npx playwright test tests/api --project=api
+        run: npm run test:api -- --project=api
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -79,7 +74,7 @@ jobs:
       - name: Run UI tests
         env:
           ENV: ${{ github.event.inputs.environment || 'development' }}
-        run: npx playwright test tests/ui --project=${{ matrix.browser }}
+        run: npm run test:ui -- --project=${{ matrix.browser }}
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -103,7 +98,7 @@ jobs:
       - name: Run integration tests
         env:
           ENV: ${{ github.event.inputs.environment || 'development' }}
-        run: npx playwright test tests/integration --project=integration
+        run: npm run test:integration -- --project=integration
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -126,7 +121,7 @@ jobs:
       - name: Run smoke tests
         env:
           ENV: development
-        run: npx playwright test --grep "@smoke" --project=chromium --project=api
+        run: npm run test:smoke -- --project=chromium --project=api
 
   all-passed:
     name: All Tests Passed
@@ -134,7 +129,7 @@ jobs:
     needs: [api-tests, ui-tests, integration-tests]
     if: always()
     steps:
-      - name: Check all jobs
+      - name: Check results
         run: |
           for r in "${{ needs.api-tests.result }}" "${{ needs.ui-tests.result }}" "${{ needs.integration-tests.result }}"; do
             if [[ "$r" != "success" && "$r" != "skipped" ]]; then
