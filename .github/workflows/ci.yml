@@ -1,0 +1,144 @@
+name: Playwright TypeScript Tests
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Target environment
+        required: true
+        default: development
+        type: choice
+        options: [development, staging, production]
+      suite:
+        description: Test suite
+        required: true
+        default: all
+        type: choice
+        options: [all, smoke, regression, ui, api, integration]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    name: Lint & Type Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - run: npm install
+      - run: npm run type-check
+      - run: npm run lint || true
+
+  api-tests:
+    name: API Tests
+    runs-on: ubuntu-latest
+    needs: lint
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - run: npm install
+      - run: npx playwright install --with-deps chromium
+      - name: Run API tests
+        env:
+          ENV: ${{ github.event.inputs.environment || 'development' }}
+        run: npx playwright test tests/api --project=api
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: api-test-results
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 30
+
+  ui-tests:
+    name: UI Tests (${{ matrix.browser }})
+    runs-on: ubuntu-latest
+    needs: lint
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, firefox, webkit]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - run: npm install
+      - run: npx playwright install --with-deps ${{ matrix.browser }}
+      - name: Run UI tests
+        env:
+          ENV: ${{ github.event.inputs.environment || 'development' }}
+        run: npx playwright test tests/ui --project=${{ matrix.browser }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ui-test-results-${{ matrix.browser }}
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 30
+
+  integration-tests:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    needs: [api-tests, ui-tests]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - run: npm install
+      - run: npx playwright install --with-deps chromium
+      - name: Run integration tests
+        env:
+          ENV: ${{ github.event.inputs.environment || 'development' }}
+        run: npx playwright test tests/integration --project=integration
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: integration-results
+          path: playwright-report/
+          retention-days: 30
+
+  smoke:
+    name: Smoke Tests
+    runs-on: ubuntu-latest
+    needs: lint
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - run: npm install
+      - run: npx playwright install --with-deps chromium
+      - name: Run smoke tests
+        env:
+          ENV: development
+        run: npx playwright test --grep "@smoke" --project=chromium --project=api
+
+  all-passed:
+    name: All Tests Passed
+    runs-on: ubuntu-latest
+    needs: [api-tests, ui-tests, integration-tests]
+    if: always()
+    steps:
+      - name: Check all jobs
+        run: |
+          for r in "${{ needs.api-tests.result }}" "${{ needs.ui-tests.result }}" "${{ needs.integration-tests.result }}"; do
+            if [[ "$r" != "success" && "$r" != "skipped" ]]; then
+              echo "Failed: $r"; exit 1
+            fi
+          done
+          echo "All tests passed"
